@@ -1,22 +1,23 @@
 let express = require('express')
+let cors=require('cors')
 let Users = require('./user')
-let connectDb = require('./userDb')
+let connectDb = require('./userDb');
 
 connectDb();
 
 let app = express()
 app.use(express.json())
-
+app.use(cors())
 //INSERT DATA INTO COLLECTION
 
 app.post('/users', async (req, res) => {
     try {
-        //console.log(req.body); 
+        console.log(req.body); 
         let { email } = req.body;
         // console.log(email);
         let isUserExist = await Users.findOne({ email })
         if (isUserExist) {
-            return res.send('Entered email is already exist')
+            return res.status(409).json({ message: "Email already exists" });
         } else {
 
             let user = await Users.create(req.body);
@@ -38,7 +39,7 @@ app.get('/all-users', async (req, res) => {
         res.send(result)
         // console.log(result);
     } catch (error) {
-        console.log("Collection is empty", error);
+        res.status(500).json({ message: "Server error" });
 
     }
 })
@@ -48,6 +49,9 @@ app.get('/user/:id', async (req, res) => {
     try {
         let usersId = req.params.id
         let userDetails = await Users.findOne({ _id: usersId })
+        if (!userDetails) {
+            return res.status(404).json({ message: "User not found" });
+        }
         res.send(userDetails)
 
 
@@ -65,7 +69,7 @@ app.patch('/update/:id', async (req, res) => {
 
     try {
         if (!userId) {
-            return console.log("The User Id Doesn't exist");
+            return res.status(404).json({ message: "User not found" });
 
         }
 
@@ -81,12 +85,28 @@ app.patch('/update/:id', async (req, res) => {
         if (username) userData.username = username
         //   console.log(  userData.username);
         await userData.save();
-        console.log("Data Updated Succdessfully");
+        res.json({ message: "Data Updated successfully" });
     } catch (error) {
-        console.error("Something is wrong");
+        res.status(400).json({ error: "Invalid ID" });
     }
 })
 
-app.listen(3000, () => {
+
+app.delete('/delete/:id', async (req, res) => {
+    let deleteId = req.params.id
+    try {
+        let deleteData = await Users.findByIdAndDelete({ _id: deleteId });
+        if (!deleteData) {
+            return res.status(404).json({ message: "User Not found" });
+        }
+        res.json({ message: "User deleted successfully" })
+
+    } catch (error) {
+        res.status(400).json({ error: "Invalid ID" });
+    }
+
+})
+
+app.listen(5000, () => {
     console.log("Crud-App server Connected");
 })
