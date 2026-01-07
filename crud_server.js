@@ -1,26 +1,33 @@
 let express = require('express')
-let cors=require('cors')
-let Users = require('./user')
+let cors = require('cors')   
 let connectDb = require('./userDb');
+let Users = require('./user')
 
 connectDb();
 
 let app = express()
+   
 app.use(express.json())
-app.use(cors())
+app.use(cors()) 
 //INSERT DATA INTO COLLECTION
 
 app.post('/users', async (req, res) => {
+  
+    
     try {
-        console.log(req.body); 
+        // console.log(req.body); 
         let { email } = req.body;
         // console.log(email);
         let isUserExist = await Users.findOne({ email })
+   
+        
         if (isUserExist) {
             return res.status(409).json({ message: "Email already exists" });
         } else {
 
             let user = await Users.create(req.body);
+          
+            
             res.json(user);
         }
     } catch (error) {
